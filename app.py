@@ -301,14 +301,16 @@ else:
 
                     st.subheader("📋 Travel Brief")
 
-travel_brief = generate_travel_brief(
-    route,
-    weather,
-    route_incidents,
-)
+with st.container(border=True):
 
-for item in travel_brief:
-    st.write(item)
+    travel_brief = generate_travel_brief(
+        route,
+        weather,
+        route_incidents,
+    )
+
+    for item in travel_brief:
+        st.write(item)
                     st.subheader("📍 Current Location")
 
                     st.write(origin["display_name"])
