@@ -115,7 +115,18 @@ if st.button("Find Coordinates", type="primary"):
                                 "Estimated Travel Time",
                                 f"{route['duration_minutes']:.0f} min",
                             )
+                            st.subheader("🛣️ Route Roads")
 
+                        if road_names:
+
+                            for road in road_names:
+                                st.write(f"• {road}")
+
+                        else:
+                            st.info(
+                                "No named roads were found "
+                                "for this route."
+                            )
                         st.subheader("🗺️ Route Map")
 
                         display_route_map(
