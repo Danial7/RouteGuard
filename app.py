@@ -98,6 +98,9 @@ if st.button("Find Coordinates", type="primary"):
 
                     else:
                         st.success("Route calculated successfully!")
+                        road_names = get_route_road_names(
+                            route["steps"]
+                        )
 
                         col1, col2 = st.columns(2)
 
