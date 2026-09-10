@@ -31,8 +31,37 @@ st.write(
 st.divider()
 
 
+st.subheader("📍 Current Location")
+
+gps_location = streamlit_geolocation()
+
+if gps_location and gps_location.get("latitude") is not None:
+
+    st.success("📍 Current location detected.")
+
+    gps_latitude = gps_location["latitude"]
+    gps_longitude = gps_location["longitude"]
+
+    st.write(
+        f"Latitude: {gps_latitude:.6f}"
+    )
+
+    st.write(
+        f"Longitude: {gps_longitude:.6f}"
+    )
+
+else:
+
+    gps_latitude = None
+    gps_longitude = None
+
+    st.info(
+        "GPS location is not available. "
+        "You can enter your location manually below."
+    )
+
 current_location = st.text_input(
-    "📍 Current Location",
+    "Or enter your location manually",
     placeholder="Example: Gulistan-e-Jauhar, Karachi",
 )
 
