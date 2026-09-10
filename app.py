@@ -184,19 +184,19 @@ if st.button("🚗 Plan My Route", type="primary"):
                                 "were found."
                             )    
 
-                        col1, col2 = st.columns(2)
+                       col1, col2 = st.columns(2)
 
-                        with col1:
-                            st.metric(
-                                "Distance",
-                                f"{route['distance_km']:.2f} km",
-                            )
+                       with col1:
+                         st.metric(
+                           "🛣️ Distance",
+                           f"{route['distance_km']:.1f} km",
+                         )
 
-                        with col2:
-                            st.metric(
-                                "Estimated Travel Time",
-                                f"{route['duration_minutes']:.0f} min",
-                            )
+                       with col2:
+                         st.metric(
+                          "⏱️ Estimated Time",
+                          f"{route['duration_minutes']:.0f} min",
+                         )
                             st.subheader("🛣️ Route Roads")
 
                         if road_names:
