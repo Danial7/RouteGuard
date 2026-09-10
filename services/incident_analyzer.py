@@ -165,3 +165,19 @@ def calculate_freshness(published_time):
         score += 10
 
     return score
+
+    def get_confidence_level(score):
+    """
+    Convert relevance score into a confidence level.
+    """
+
+    if score >= 60:
+        return "HIGH"
+
+    if score >= 40:
+        return "MEDIUM"
+
+    if score >= 20:
+        return "LOW"
+
+    return "IGNORE"
