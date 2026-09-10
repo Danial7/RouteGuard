@@ -129,3 +129,39 @@ def calculate_freshness(published_time):
         return "OLDER"
 
     return "STALE"
+
+    def calculate_route_relevance(incident, road_names):
+    """
+    Calculate how relevant an incident is to the selected route.
+    """
+
+    score = 0
+
+    incident_road = incident.get("road", "").lower()
+
+    route_roads = [
+        road.lower()
+        for road in road_names
+    ]
+
+    # Road match
+    if incident_road in route_roads:
+        score += 30
+
+    # Freshness
+    freshness = incident.get("freshness")
+
+    if freshness == "VERY_RECENT":
+        score += 25
+
+    elif freshness == "RECENT":
+        score += 20
+
+    elif freshness == "OLDER":
+        score += 10
+
+    # Recognized incident
+    if incident.get("type"):
+        score += 10
+
+    return score
