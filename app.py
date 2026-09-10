@@ -71,7 +71,51 @@ if st.button("Find Coordinates", type="primary"):
                 else:
 
                     st.success("Both locations found successfully!")
+                                        with st.spinner("Calculating route..."):
 
+                        try:
+                            route = get_route(
+                                origin,
+                                destination_data,
+                            )
+
+                        except requests.RequestException:
+                            st.error(
+                                "Unable to contact the routing service. "
+                                "Please try again later."
+                            )
+                            route = None
+
+                    if route is None:
+                        st.error(
+                            "Unable to calculate a route "
+                            "between these locations."
+                        )
+
+                    else:
+                        st.success("Route calculated successfully!")
+
+                        col1, col2 = st.columns(2)
+
+                        with col1:
+                            st.metric(
+                                "Distance",
+                                f"{route['distance_km']:.2f} km",
+                            )
+
+                        with col2:
+                            st.metric(
+                                "Estimated Travel Time",
+                                f"{route['duration_minutes']:.0f} min",
+                            )
+
+                        st.subheader("🗺️ Route Map")
+
+                        display_route_map(
+                            origin,
+                            destination_data,
+                            route,
+                        )
                     st.subheader("📍 Current Location")
 
                     st.write(origin["display_name"])
