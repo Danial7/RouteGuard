@@ -258,7 +258,18 @@ if st.button("Find Coordinates", type="primary"):
                                 st.metric(
                                     "Wind Speed",
                                     f"{weather['wind_speed']} km/h",
-                                )    
+                                )   
+
+                    st.subheader("📋 Travel Brief")
+
+travel_brief = generate_travel_brief(
+    route,
+    weather,
+    route_incidents,
+)
+
+for item in travel_brief:
+    st.write(item)
                     st.subheader("📍 Current Location")
 
                     st.write(origin["display_name"])
