@@ -41,7 +41,7 @@ destination = st.text_input(
 )
 
 
-if st.button("Find Coordinates", type="primary"):
+if st.button("🚗 Plan My Route", type="primary"):
 
     if not current_location or not destination:
         st.warning(
