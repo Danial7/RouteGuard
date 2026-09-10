@@ -20,11 +20,11 @@ st.set_page_config(
 
 
 st.title("🚗 RouteGuard")
-st.subheader("Smart Route & Travel Alert Assistant")
+st.caption("Smart Route & Travel Alert Assistant")
 
 st.write(
-    "Enter your current location and destination "
-    "to begin planning your journey."
+    "Plan your journey, check current conditions, "
+    "and get alerts about potential route disruptions."
 )
 
 st.divider()
