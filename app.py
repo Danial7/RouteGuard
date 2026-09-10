@@ -133,10 +133,49 @@ if st.button("🚗 Plan My Route", type="primary"):
 
                         if route_incidents:
 
-                            st.warning(
-                                f"{len(route_incidents)} "
-                                f"potential route incident(s) found."
-                            )
+    st.warning(
+        f"{len(route_incidents)} "
+        f"potential route incident(s) found."
+    )
+
+    for incident in route_incidents:
+
+        with st.expander(
+            f"🚨 {incident['type']} — "
+            f"{incident['road']}"
+        ):
+
+            st.write(
+                f"**Incident:** "
+                f"{incident['title']}"
+            )
+
+            st.write(
+                f"**Freshness:** "
+                f"{incident['freshness']}"
+            )
+
+            st.write(
+                f"**Confidence:** "
+                f"{incident['confidence']}"
+            )
+
+            st.write(
+                f"**Source:** "
+                f"{incident['source']}"
+            )
+
+            if incident["url"]:
+                st.write(
+                    f"[Read source]({incident['url']})"
+                )
+
+else:
+
+    st.success(
+        "✅ No relevant recent route incidents "
+        "were found."
+    )
 
                             for incident in route_incidents:
 
