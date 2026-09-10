@@ -1,6 +1,7 @@
 import requests
 import streamlit as st
 
+from streamlit_geolocation import streamlit_geolocation
 from services.geocoder import geocode_location
 from services.router import (
     get_route,
