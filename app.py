@@ -117,6 +117,49 @@ if st.button("Find Coordinates", type="primary"):
                             destination_data,
                             route,
                         )
+                                            st.subheader("🌤️ Current Weather")
+
+                        with st.spinner("Getting current weather..."):
+
+                            try:
+                                weather = get_weather(
+                                    origin["latitude"],
+                                    origin["longitude"],
+                                )
+
+                            except requests.RequestException:
+                                st.warning(
+                                    "Unable to retrieve current weather."
+                                )
+                                weather = None
+
+                        if weather:
+
+                            col1, col2, col3, col4 = st.columns(4)
+
+                            with col1:
+                                st.metric(
+                                    "Temperature",
+                                    f"{weather['temperature']} °C",
+                                )
+
+                            with col2:
+                                st.metric(
+                                    "Humidity",
+                                    f"{weather['humidity']} %",
+                                )
+
+                            with col3:
+                                st.metric(
+                                    "Condition",
+                                    weather["description"],
+                                )
+
+                            with col4:
+                                st.metric(
+                                    "Wind Speed",
+                                    f"{weather['wind_speed']} km/h",
+                                )    
                     st.subheader("📍 Current Location")
 
                     st.write(origin["display_name"])
