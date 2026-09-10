@@ -73,10 +73,15 @@ destination = st.text_input(
 
 if st.button("🚗 Plan My Route", type="primary"):
 
-    if not current_location or not destination:
+    if (
+    gps_latitude is None
+    and not current_location
+) or not destination:
         st.warning(
-            "Please enter both your current location and destination."
-        )
+        "Please use your current GPS location "
+        "or enter your current location manually, "
+        "and enter a destination."
+    )
 
     else:
 
