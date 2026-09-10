@@ -311,6 +311,14 @@ with st.container(border=True):
 
     for item in travel_brief:
         st.write(item)
+
+st.caption(
+    "⚠️ RouteGuard alerts are based on available public "
+    "information and may not represent real-time road "
+    "conditions. Always follow official traffic "
+    "instructions and road signs."
+)
+       
                     st.subheader("📍 Current Location")
 
                     st.write(origin["display_name"])
