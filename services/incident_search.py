@@ -51,3 +51,25 @@ def search_incidents(road_name):
         )
 
     return incidents
+
+    def search_route_incidents(road_names):
+    """
+    Search for incidents on all roads in a route.
+    """
+
+    all_incidents = []
+
+    for road_name in road_names:
+
+        try:
+            incidents = search_incidents(road_name)
+
+            all_incidents.extend(incidents)
+
+        except requests.RequestException:
+            print(
+                f"Could not search incidents for: "
+                f"{road_name}"
+            )
+
+    return all_incidents
