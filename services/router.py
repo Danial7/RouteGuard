@@ -62,3 +62,19 @@ def get_route(origin, destination):
         "geometry": route["geometry"],
         "steps": route["legs"][0]["steps"],
     }
+
+    def get_route_road_names(route_steps):
+    """
+    Extract unique road names from OSRM route steps.
+    """
+
+    road_names = []
+
+    for step in route_steps:
+
+        road_name = step.get("name", "").strip()
+
+        if road_name and road_name not in road_names:
+            road_names.append(road_name)
+
+    return road_names
