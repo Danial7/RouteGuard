@@ -2,12 +2,8 @@ import requests
 import streamlit as st
 
 from services.geocoder import geocode_location
-
-
-
-import streamlit as st
-
-from services.geocoder import geocode_location
+from services.router import get_route
+from ui.map import display_route_map
 
 
 st.set_page_config(
