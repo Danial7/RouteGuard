@@ -102,6 +102,29 @@ def calculate_freshness(published_time):
     if age_hours <= 24:
         return "RECENT"
 
+    def analyze_incident(incident):
+    """
+    Classify and assess the freshness of an incident.
+    """
+
+    incident_type = classify_incident(
+        incident["title"]
+    )
+
+    freshness = calculate_freshness(
+        incident["published"]
+    )
+
+    if incident_type is None:
+        return None
+
+    analyzed_incident = incident.copy()
+
+    analyzed_incident["type"] = incident_type
+    analyzed_incident["freshness"] = freshness
+
+    return analyzed_incident
+
     if age_hours <= 72:
         return "OLDER"
 
