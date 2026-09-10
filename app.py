@@ -255,7 +255,7 @@ else:
                             destination_data,
                             route,
                         )
-                                            st.subheader("🌤️ Current Weather")
+                        st.subheader("🌤️ Current Weather at Starting Location")
 
                         with st.spinner("Getting current weather..."):
 
