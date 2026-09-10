@@ -69,3 +69,40 @@ def classify_incident(title):
                 return incident_type
 
     return None
+
+    from datetime import datetime, timezone
+
+
+def calculate_freshness(published_time):
+    """
+    Estimate how recent an incident is.
+    """
+
+    if not published_time:
+        return "UNKNOWN"
+
+    try:
+        published = datetime.strptime(
+            published_time,
+            "%Y%m%dT%H%M%SZ",
+        ).replace(tzinfo=timezone.utc)
+
+    except ValueError:
+        return "UNKNOWN"
+
+    now = datetime.now(timezone.utc)
+
+    age_hours = (
+        now - published
+    ).total_seconds() / 3600
+
+    if age_hours <= 6:
+        return "VERY_RECENT"
+
+    if age_hours <= 24:
+        return "RECENT"
+
+    if age_hours <= 72:
+        return "OLDER"
+
+    return "STALE"
