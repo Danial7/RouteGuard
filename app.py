@@ -10,6 +10,7 @@ from services.weather import get_weather
 from ui.map import display_route_map
 from services.incident_search import search_route_incidents
 from services.incident_analyzer import analyze_route_incidents
+from ui.travel_brief import generate_travel_brief
 
 st.set_page_config(
     page_title="RouteGuard",
