@@ -8,7 +8,8 @@ from services.router import (
 )
 from services.weather import get_weather
 from ui.map import display_route_map
-
+from services.incident_search import search_route_incidents
+from services.incident_analyzer import analyze_route_incidents
 
 st.set_page_config(
     page_title="RouteGuard",
@@ -101,6 +102,86 @@ if st.button("Find Coordinates", type="primary"):
                         road_names = get_route_road_names(
                             route["steps"]
                         )
+
+                                            st.subheader("⚠️ Route Alerts")
+
+                        with st.spinner(
+                            "Searching for recent incidents "
+                            "on your route..."
+                        ):
+
+                            try:
+
+                                raw_incidents = search_route_incidents(
+                                    road_names
+                                )
+
+                                route_incidents = analyze_route_incidents(
+                                    raw_incidents,
+                                    road_names,
+                                )
+
+                            except requests.RequestException:
+
+                                st.warning(
+                                    "Unable to search for route incidents "
+                                    "at this time."
+                                )
+
+                                route_incidents = []
+
+                        if route_incidents:
+
+                            st.warning(
+                                f"{len(route_incidents)} "
+                                f"potential route incident(s) found."
+                            )
+
+                            for incident in route_incidents:
+
+                                st.markdown(
+                                    f"### 🚨 {incident['type']}"
+                                )
+
+                                st.write(
+                                    f"**Road:** "
+                                    f"{incident['road']}"
+                                )
+
+                                st.write(
+                                    f"**Incident:** "
+                                    f"{incident['title']}"
+                                )
+
+                                st.write(
+                                    f"**Freshness:** "
+                                    f"{incident['freshness']}"
+                                )
+
+                                st.write(
+                                    f"**Confidence:** "
+                                    f"{incident['confidence']}"
+                                )
+
+                                st.write(
+                                    f"**Source:** "
+                                    f"{incident['source']}"
+                                )
+
+                                if incident["url"]:
+
+                                    st.write(
+                                        f"[Read source]({incident['url']})"
+                                    )
+
+                                st.divider()
+
+                        else:
+
+                            st.success(
+                                "No relevant recent route incidents "
+                                "were found."
+                            )    
 
                         col1, col2 = st.columns(2)
 
