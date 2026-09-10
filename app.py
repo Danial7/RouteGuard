@@ -83,8 +83,19 @@ if st.button("🚗 Plan My Route", type="primary"):
         with st.spinner("Finding locations..."):
 
             try:
-                origin = geocode_location(current_location)
-                destination_data = geocode_location(destination)
+                if gps_latitude is not None and gps_longitude is not None:
+
+    origin = {
+        "display_name": "Current GPS Location",
+        "latitude": gps_latitude,
+        "longitude": gps_longitude,
+    }
+
+else:
+
+    origin = geocode_location(current_location)
+
+destination_data = geocode_location(destination)
 
             except requests.RequestException:
                 st.error(
