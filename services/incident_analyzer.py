@@ -166,6 +166,42 @@ def calculate_freshness(published_time):
 
     return score
 
+    def analyze_route_incidents(incidents, road_names):
+    """
+    Analyze incidents and keep those relevant to the route.
+    """
+
+    analyzed_incidents = []
+
+    for incident in incidents:
+
+        analyzed = analyze_incident(
+            incident
+        )
+
+        if analyzed is None:
+            continue
+
+        score = calculate_route_relevance(
+            analyzed,
+            road_names,
+        )
+
+        confidence = get_confidence_level(
+            score
+        )
+
+        if confidence == "IGNORE":
+            continue
+
+        analyzed["relevance_score"] = score
+        analyzed["confidence"] = confidence
+
+        analyzed_incidents.append(
+            analyzed
+        )
+
+    return analyzed_incidents
     def get_confidence_level(score):
     """
     Convert relevance score into a confidence level.
