@@ -6,6 +6,66 @@ from services.geocoder import geocode_location
 GDELT_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
 
 
+# --------------------------------------------------
+# KNOWN KARACHI LOCATIONS
+# --------------------------------------------------
+
+KARACHI_LOCATIONS = [
+    "Nursery",
+    "Drigh Road",
+    "Malir Halt",
+    "Star Gate",
+    "Airport",
+    "Karsaz",
+    "Lal Kothi",
+    "Regent Plaza",
+    "Natha Khan",
+    "Sohrab Goth",
+    "Johar Mor",
+    "Gulistan-e-Jauhar",
+    "Gulshan-e-Iqbal",
+    "Nipa",
+    "University Road",
+    "Saddar",
+    "Tariq Road",
+    "Korangi",
+    "Landhi",
+    "Defence",
+    "Clifton",
+    "Lyari",
+    "SITE",
+    "Mauripur",
+    "Port Qasim",
+]
+
+
+# --------------------------------------------------
+# EXTRACT SPECIFIC INCIDENT LOCATION
+# --------------------------------------------------
+
+def extract_incident_location(title):
+    """
+    Try to find a specific Karachi location
+    mentioned in the incident title.
+    """
+
+    if not title:
+        return None
+
+    title_lower = title.lower()
+
+    for location in KARACHI_LOCATIONS:
+
+        if location.lower() in title_lower:
+            return location
+
+    return None
+
+
+# --------------------------------------------------
+# SEARCH INCIDENTS FOR ONE ROAD
+# --------------------------------------------------
+
 def search_incidents(road_name):
     """
     Search recent public reports for a specific road.
@@ -39,7 +99,10 @@ def search_incidents(road_name):
 
     data = response.json()
 
-    articles = data.get("articles", [])
+    articles = data.get(
+        "articles",
+        []
+    )
 
     incidents = []
 
@@ -47,16 +110,36 @@ def search_incidents(road_name):
 
         incidents.append(
             {
-                "title": article.get("title", ""),
-                "url": article.get("url", ""),
-                "source": article.get("domain", ""),
-                "published": article.get("seendate", ""),
-                "language": article.get("language", ""),
+                "title": article.get(
+                    "title",
+                    "",
+                ),
+                "url": article.get(
+                    "url",
+                    "",
+                ),
+                "source": article.get(
+                    "domain",
+                    "",
+                ),
+                "published": article.get(
+                    "seendate",
+                    "",
+                ),
+                "language": article.get(
+                    "language",
+                    "",
+                ),
                 "road": road_name,
             }
         )
 
     return incidents
+
+
+# --------------------------------------------------
+# ADD GEOGRAPHIC LOCATION TO INCIDENT
+# --------------------------------------------------
 
 def add_incident_location(incident):
     """
@@ -64,22 +147,36 @@ def add_incident_location(incident):
     of an incident using its title and road name.
     """
 
-    title = incident.get("title", "")
-    road_name = incident.get("road", "")
+    title = incident.get(
+        "title",
+        "",
+    )
 
-    specific_location = extract_incident_location(
-        title
+    road_name = incident.get(
+        "road",
+        "",
+    )
+
+    specific_location = (
+        extract_incident_location(
+            title
+        )
     )
 
     if specific_location:
+
         search_location = (
             f"{specific_location}, Karachi"
         )
+
     elif road_name:
+
         search_location = (
             f"{road_name}, Karachi"
         )
+
     else:
+
         search_location = ""
 
     updated_incident = incident.copy()
@@ -88,17 +185,21 @@ def add_incident_location(incident):
         specific_location
     )
 
+    # No location available
     if not search_location:
+
         updated_incident["latitude"] = None
         updated_incident["longitude"] = None
 
         return updated_incident
 
+    # Geocode the location
     location = geocode_location(
         search_location
     )
 
     if location:
+
         updated_incident["latitude"] = (
             location["latitude"]
         )
@@ -106,13 +207,23 @@ def add_incident_location(incident):
         updated_incident["longitude"] = (
             location["longitude"]
         )
+
     else:
+
         updated_incident["latitude"] = None
         updated_incident["longitude"] = None
 
-    return updated_incident   def search_route_incidents(road_names):
+    return updated_incident
+
+
+# --------------------------------------------------
+# SEARCH INCIDENTS FOR ALL ROUTE ROADS
+# --------------------------------------------------
+
+def search_route_incidents(road_names):
     """
-    Search recent incidents for roads included in the route.
+    Search recent incidents for roads included
+    in the route.
     """
 
     all_incidents = []
@@ -124,17 +235,19 @@ def add_incident_location(incident):
 
         try:
 
-         incidents = search_incidents(
-    road_name
-)
+            incidents = search_incidents(
+                road_name
+            )
 
-for incident in incidents:
-    incident = add_incident_location(
-        incident
-    )
-    all_incidents.append(
-        incident
-    )
+            for incident in incidents:
+
+                incident = add_incident_location(
+                    incident
+                )
+
+                all_incidents.append(
+                    incident
+                )
 
         except requests.RequestException:
 
@@ -144,49 +257,3 @@ for incident in incidents:
             )
 
     return all_incidents
-
-KARACHI_LOCATIONS = [
-    "Nursery",
-    "Drigh Road",
-    "Malir Halt",
-    "Star Gate",
-    "Airport",
-    "Karsaz",
-    "Lal Kothi",
-    "Regent Plaza",
-    "Natha Khan",
-    "Sohrab Goth",
-    "Johar Mor",
-    "Gulistan-e-Jauhar",
-    "Gulshan-e-Iqbal",
-    "Nipa",
-    "University Road",
-    "Saddar",
-    "Tariq Road",
-    "Korangi",
-    "Landhi",
-    "Defence",
-    "Clifton",
-    "Lyari",
-    "SITE",
-    "Mauripur",
-    "Port Qasim",
-]
-
-def extract_incident_location(title):
-    """
-    Try to find a specific Karachi location
-    mentioned in the incident title.
-    """
-
-    if not title:
-        return None
-
-    title_lower = title.lower()
-
-    for location in KARACHI_LOCATIONS:
-
-        if location.lower() in title_lower:
-            return location
-
-    return None
