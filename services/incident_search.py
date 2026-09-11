@@ -61,24 +61,48 @@ def search_incidents(road_name):
 def add_incident_location(incident):
     """
     Try to determine the geographic location
-    of an incident using its road name.
+    of an incident using its title and road name.
     """
 
+    title = incident.get("title", "")
     road_name = incident.get("road", "")
 
-    if not road_name:
-        return incident
-
-    location = geocode_location(
-        f"{road_name}, Karachi"
+    specific_location = extract_incident_location(
+        title
     )
 
+    if specific_location:
+        search_location = (
+            f"{specific_location}, Karachi"
+        )
+    elif road_name:
+        search_location = (
+            f"{road_name}, Karachi"
+        )
+    else:
+        search_location = ""
+
     updated_incident = incident.copy()
+
+    updated_incident["incident_location"] = (
+        specific_location
+    )
+
+    if not search_location:
+        updated_incident["latitude"] = None
+        updated_incident["longitude"] = None
+
+        return updated_incident
+
+    location = geocode_location(
+        search_location
+    )
 
     if location:
         updated_incident["latitude"] = (
             location["latitude"]
         )
+
         updated_incident["longitude"] = (
             location["longitude"]
         )
@@ -86,9 +110,7 @@ def add_incident_location(incident):
         updated_incident["latitude"] = None
         updated_incident["longitude"] = None
 
-    return updated_incident
-
-   def search_route_incidents(road_names):
+    return updated_incident   def search_route_incidents(road_names):
     """
     Search recent incidents for roads included in the route.
     """
