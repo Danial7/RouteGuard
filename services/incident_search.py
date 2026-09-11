@@ -56,21 +56,30 @@ def search_incidents(road_name):
 
     return incidents
 
-    def search_route_incidents(road_names):
+   def search_route_incidents(road_names):
     """
-    Search for incidents on all roads in a route.
+    Search recent incidents for roads included in the route.
     """
 
     all_incidents = []
 
-    for road_name in road_names:
+    # Limit searches to avoid excessive API requests
+    roads_to_search = road_names[:10]
+
+    for road_name in roads_to_search:
 
         try:
-            incidents = search_incidents(road_name)
 
-            all_incidents.extend(incidents)
+            incidents = search_incidents(
+                road_name
+            )
+
+            all_incidents.extend(
+                incidents
+            )
 
         except requests.RequestException:
+
             print(
                 f"Could not search incidents for: "
                 f"{road_name}"
