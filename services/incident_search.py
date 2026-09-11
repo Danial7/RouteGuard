@@ -102,13 +102,17 @@ def add_incident_location(incident):
 
         try:
 
-            incidents = search_incidents(
-                road_name
-            )
+         incidents = search_incidents(
+    road_name
+)
 
-            all_incidents.extend(
-                incidents
-            )
+for incident in incidents:
+    incident = add_incident_location(
+        incident
+    )
+    all_incidents.append(
+        incident
+    )
 
         except requests.RequestException:
 
