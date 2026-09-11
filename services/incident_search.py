@@ -1,5 +1,7 @@
 import requests
 
+from services.geocoder import geocode_location
+
 
 GDELT_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
 
@@ -55,6 +57,36 @@ def search_incidents(road_name):
         )
 
     return incidents
+
+def add_incident_location(incident):
+    """
+    Try to determine the geographic location
+    of an incident using its road name.
+    """
+
+    road_name = incident.get("road", "")
+
+    if not road_name:
+        return incident
+
+    location = geocode_location(
+        f"{road_name}, Karachi"
+    )
+
+    updated_incident = incident.copy()
+
+    if location:
+        updated_incident["latitude"] = (
+            location["latitude"]
+        )
+        updated_incident["longitude"] = (
+            location["longitude"]
+        )
+    else:
+        updated_incident["latitude"] = None
+        updated_incident["longitude"] = None
+
+    return updated_incident
 
    def search_route_incidents(road_names):
     """
