@@ -122,3 +122,31 @@ for incident in incidents:
             )
 
     return all_incidents
+
+KARACHI_LOCATIONS = [
+    "Nursery",
+    "Drigh Road",
+    "Malir Halt",
+    "Star Gate",
+    "Airport",
+    "Karsaz",
+    "Lal Kothi",
+    "Regent Plaza",
+    "Natha Khan",
+    "Sohrab Goth",
+    "Johar Mor",
+    "Gulistan-e-Jauhar",
+    "Gulshan-e-Iqbal",
+    "Nipa",
+    "University Road",
+    "Saddar",
+    "Tariq Road",
+    "Korangi",
+    "Landhi",
+    "Defence",
+    "Clifton",
+    "Lyari",
+    "SITE",
+    "Mauripur",
+    "Port Qasim",
+]
