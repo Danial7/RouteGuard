@@ -1,5 +1,7 @@
 import re
 
+from utils.distance import distance_to_route_km
+
 def normalize_road_name(road_name):
     """
     Normalize a road name for easier comparison.
@@ -230,40 +232,61 @@ def calculate_freshness(published_time):
 
     return "STALE"
 
-    def calculate_route_relevance(
+   def calculate_route_relevance(
     incident,
     road_names,
+    route_geometry=None,
 ):
-    """
-    Calculate how relevant an incident is
-    to the selected route.
-    """
-
     score = 0
 
-    incident_road = normalize_road_name(
-        incident.get("road", "")
+    incident_road = incident.get(
+        "road",
+        "",
     )
 
     route_roads = [
-        normalize_road_name(road)
+        road
         for road in road_names
     ]
 
-    # Exact normalized road match
-   for route_road in route_roads:
+    # Road-name matching
+    for route_road in route_roads:
 
-    if roads_match(
-        incident_road,
-        route_road,
+        if roads_match(
+            incident_road,
+            route_road,
+        ):
+            score += 30
+            break
+
+    # Geographic distance
+    if (
+        route_geometry
+        and incident.get("latitude") is not None
+        and incident.get("longitude") is not None
     ):
-        score += 30
-        break
 
+        distance = distance_to_route_km(
+            incident["latitude"],
+            incident["longitude"],
+            route_geometry,
+        )
 
+        incident["route_distance_km"] = distance
+
+        if distance <= 1:
+            score += 30
+
+        elif distance <= 3:
+            score += 20
+
+        elif distance <= 5:
+            score += 10
 
     # Freshness
-    freshness = incident.get("freshness")
+    freshness = incident.get(
+        "freshness"
+    )
 
     if freshness == "VERY_RECENT":
         score += 25
@@ -279,8 +302,12 @@ def calculate_freshness(published_time):
         score += 10
 
     return score
-
-    def analyze_route_incidents(incidents, road_names):
+    
+   def analyze_route_incidents(
+    incidents,
+    road_names,
+    route_geometry=None,
+):
     """
     Analyze incidents and keep those relevant to the route.
     """
@@ -296,10 +323,11 @@ def calculate_freshness(published_time):
         if analyzed is None:
             continue
 
-        score = calculate_route_relevance(
-            analyzed,
-            road_names,
-        )
+       score = calculate_route_relevance(
+    analyzed,
+    road_names,
+    route_geometry,
+)
 
         confidence = get_confidence_level(
             score
