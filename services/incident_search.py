@@ -150,3 +150,21 @@ KARACHI_LOCATIONS = [
     "Mauripur",
     "Port Qasim",
 ]
+
+def extract_incident_location(title):
+    """
+    Try to find a specific Karachi location
+    mentioned in the incident title.
+    """
+
+    if not title:
+        return None
+
+    title_lower = title.lower()
+
+    for location in KARACHI_LOCATIONS:
+
+        if location.lower() in title_lower:
+            return location
+
+    return None
