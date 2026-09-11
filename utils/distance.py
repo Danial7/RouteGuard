@@ -73,3 +73,35 @@ def calculate_distance_km(
     )
 
     return earth_radius_km * c
+
+def distance_to_route_km(
+    latitude,
+    longitude,
+    route_geometry,
+):
+    """
+    Calculate the approximate distance from a point
+    to the nearest point in the route geometry.
+    """
+
+    minimum_distance = None
+
+    for coordinate in route_geometry["coordinates"]:
+
+        route_longitude = coordinate[0]
+        route_latitude = coordinate[1]
+
+        distance = calculate_distance_km(
+            latitude,
+            longitude,
+            route_latitude,
+            route_longitude,
+        )
+
+        if (
+            minimum_distance is None
+            or distance < minimum_distance
+        ):
+            minimum_distance = distance
+
+    return minimum_distance
