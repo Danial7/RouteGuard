@@ -1,3 +1,103 @@
+import re
+
+def normalize_road_name(road_name):
+    """
+    Normalize a road name for easier comparison.
+    """
+
+    if not road_name:
+        return ""
+
+    road_name = road_name.lower()
+
+    # Remove common punctuation
+    road_name = re.sub(
+        r"[-_/.,]",
+        " ",
+        road_name,
+    )
+
+    # Remove common road suffixes
+    road_name = re.sub(
+        r"\b(road|rd|street|st|avenue|ave)\b",
+        "",
+        road_name,
+    )
+
+    # Remove extra spaces
+    road_name = re.sub(
+        r"\s+",
+        " ",
+        road_name,
+    ).strip()
+
+    return road_name
+
+    ROAD_ALIASES = {
+    "shahrah e faisal": [
+        "shahrah faisal",
+        "shara e faisal",
+        "shahrah e faisal road",
+    ],
+
+    "mauripur road": [
+        "mauripur rd",
+        "mauripur road",
+    ],
+
+    "korangi road": [
+        "korangi road",
+        "korangi rd",
+    ],
+}
+
+
+def roads_match(
+    incident_road,
+    route_road,
+):
+    """
+    Check whether two road names refer
+    to the same road.
+    """
+
+    incident = normalize_road_name(
+        incident_road
+    )
+
+    route = normalize_road_name(
+        route_road
+    )
+
+    if not incident or not route:
+        return False
+
+    if incident == route:
+        return True
+
+    if incident in route or route in incident:
+        return True
+
+    for main_road, aliases in ROAD_ALIASES.items():
+
+        route_group = [
+            main_road,
+            *aliases,
+        ]
+
+        normalized_group = [
+            normalize_road_name(name)
+            for name in route_group
+        ]
+
+        if (
+            route in normalized_group
+            and incident in normalized_group
+        ):
+            return True
+
+    return False
+
 INCIDENT_KEYWORDS = {
     "ACCIDENT": [
         "accident",
@@ -130,23 +230,37 @@ def calculate_freshness(published_time):
 
     return "STALE"
 
-    def calculate_route_relevance(incident, road_names):
+    def calculate_route_relevance(
+    incident,
+    road_names,
+):
     """
-    Calculate how relevant an incident is to the selected route.
+    Calculate how relevant an incident is
+    to the selected route.
     """
 
     score = 0
 
-    incident_road = incident.get("road", "").lower()
+    incident_road = normalize_road_name(
+        incident.get("road", "")
+    )
 
     route_roads = [
-        road.lower()
+        normalize_road_name(road)
         for road in road_names
     ]
 
-    # Road match
-    if incident_road in route_roads:
+    # Exact normalized road match
+   for route_road in route_roads:
+
+    if roads_match(
+        incident_road,
+        route_road,
+    ):
         score += 30
+        break
+
+
 
     # Freshness
     freshness = incident.get("freshness")
