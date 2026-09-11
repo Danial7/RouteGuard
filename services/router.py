@@ -7,14 +7,6 @@ OSRM_URL = "https://router.project-osrm.org/route/v1/driving"
 def get_route(origin, destination):
     """
     Calculate a driving route between two locations using OSRM.
-
-    Parameters:
-        origin (dict): Location containing latitude and longitude.
-        destination (dict): Location containing latitude and longitude.
-
-    Returns:
-        dict: Route information.
-        None: If no route is found.
     """
 
     origin_coordinates = (
@@ -63,7 +55,8 @@ def get_route(origin, destination):
         "steps": route["legs"][0]["steps"],
     }
 
-    def get_route_road_names(route_steps):
+
+def get_route_road_names(route_steps):
     """
     Extract unique road names from OSRM route steps.
     """
@@ -72,9 +65,17 @@ def get_route(origin, destination):
 
     for step in route_steps:
 
-        road_name = step.get("name", "").strip()
+        road_name = step.get(
+            "name",
+            "",
+        ).strip()
 
-        if road_name and road_name not in road_names:
-            road_names.append(road_name)
+        if (
+            road_name
+            and road_name not in road_names
+        ):
+            road_names.append(
+                road_name
+            )
 
     return road_names
