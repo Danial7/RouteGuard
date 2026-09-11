@@ -6,13 +6,16 @@ GDELT_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
 
 def search_incidents(road_name):
     """
-    Search recent public news information for a road.
+    Search recent public reports for a specific road.
     """
 
     query = (
-        f'"{road_name}" '
-        f'(accident OR crash OR traffic OR congestion OR '
-        f'closure OR construction OR diversion OR blocked)'
+        f'"{road_name}" Karachi '
+        f'(accident OR crash OR collision OR '
+        f'"traffic jam" OR congestion OR '
+        f'"road closure" OR "road closed" OR '
+        f'construction OR diversion OR '
+        f'"road blocked" OR "lane closure")'
     )
 
     params = {
@@ -21,6 +24,7 @@ def search_incidents(road_name):
         "format": "json",
         "maxrecords": 10,
         "sort": "datedesc",
+        "timespan": "7d",
     }
 
     response = requests.get(
