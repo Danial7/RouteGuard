@@ -2,16 +2,34 @@ import requests
 import streamlit as st
 
 from streamlit_geolocation import streamlit_geolocation
+
 from services.geocoder import geocode_location
+
 from services.router import (
     get_route,
     get_route_road_names,
 )
+
 from services.weather import get_weather
+
+from services.incident_search import (
+    search_route_incidents,
+)
+
+from services.incident_analyzer import (
+    analyze_route_incidents,
+)
+
 from ui.map import display_route_map
-from services.incident_search import search_route_incidents
-from services.incident_analyzer import analyze_route_incidents
-from ui.travel_brief import generate_travel_brief
+
+from ui.travel_brief import (
+    generate_travel_brief,
+)
+
+
+# --------------------------------------------------
+# PAGE CONFIGURATION
+# --------------------------------------------------
 
 st.set_page_config(
     page_title="RouteGuard",
@@ -20,8 +38,15 @@ st.set_page_config(
 )
 
 
+# --------------------------------------------------
+# HEADER
+# --------------------------------------------------
+
 st.title("🚗 RouteGuard")
-st.caption("Smart Route & Travel Alert Assistant")
+
+st.caption(
+    "Smart Route & Travel Alert Assistant"
+)
 
 st.write(
     "Plan your journey, check current conditions, "
@@ -31,13 +56,23 @@ st.write(
 st.divider()
 
 
+# --------------------------------------------------
+# CURRENT LOCATION
+# --------------------------------------------------
+
 st.subheader("📍 Current Location")
 
 gps_location = streamlit_geolocation()
 
-if gps_location and gps_location.get("latitude") is not None:
 
-    st.success("📍 Current location detected.")
+if (
+    gps_location
+    and gps_location.get("latitude") is not None
+):
+
+    st.success(
+        "📍 Current location detected."
+    )
 
     gps_latitude = gps_location["latitude"]
     gps_longitude = gps_location["longitude"]
@@ -60,10 +95,20 @@ else:
         "You can enter your location manually below."
     )
 
+
+# --------------------------------------------------
+# MANUAL CURRENT LOCATION
+# --------------------------------------------------
+
 current_location = st.text_input(
     "Or enter your location manually",
     placeholder="Example: Gulistan-e-Jauhar, Karachi",
 )
+
+
+# --------------------------------------------------
+# DESTINATION
+# --------------------------------------------------
 
 destination = st.text_input(
     "🏁 Destination",
@@ -71,333 +116,460 @@ destination = st.text_input(
 )
 
 
-if st.button("🚗 Plan My Route", type="primary"):
+# --------------------------------------------------
+# PLAN ROUTE BUTTON
+# --------------------------------------------------
+
+if st.button(
+    "🚗 Plan My Route",
+    type="primary",
+):
+
+    # --------------------------------------------------
+    # INPUT VALIDATION
+    # --------------------------------------------------
 
     if (
-    gps_latitude is None
-    and not current_location
-) or not destination:
+        gps_latitude is None
+        and not current_location
+    ) or not destination:
+
         st.warning(
-        "Please use your current GPS location "
-        "or enter your current location manually, "
-        "and enter a destination."
-    )
+            "Please use your current GPS location "
+            "or enter your current location manually, "
+            "and enter a destination."
+        )
 
     else:
 
-        with st.spinner("Finding locations..."):
+        # --------------------------------------------------
+        # GEOCODING
+        # --------------------------------------------------
+
+        with st.spinner(
+            "Finding locations..."
+        ):
 
             try:
-                if gps_latitude is not None and gps_longitude is not None:
 
-    origin = {
-        "display_name": "Current GPS Location",
-        "latitude": gps_latitude,
-        "longitude": gps_longitude,
-    }
+                # Use GPS coordinates if available
+                if (
+                    gps_latitude is not None
+                    and gps_longitude is not None
+                ):
 
-else:
+                    origin = {
+                        "display_name": (
+                            "Current GPS Location"
+                        ),
+                        "latitude": gps_latitude,
+                        "longitude": gps_longitude,
+                    }
 
-    origin = geocode_location(current_location)
+                # Otherwise geocode manual location
+                else:
 
-destination_data = geocode_location(destination)
+                    origin = geocode_location(
+                        current_location
+                    )
+
+                # Geocode destination
+                destination_data = geocode_location(
+                    destination
+                )
 
             except requests.RequestException:
+
                 st.error(
-                    "Unable to contact the location service. "
-                    "Please try again later."
+                    "Unable to contact the location "
+                    "service. Please try again later."
+                )
+
+                origin = None
+                destination_data = None
+
+        # --------------------------------------------------
+        # LOCATION VALIDATION
+        # --------------------------------------------------
+
+        if origin is None:
+
+            st.error(
+                f"Could not find: "
+                f"{current_location}"
+            )
+
+        elif destination_data is None:
+
+            st.error(
+                f"Could not find: "
+                f"{destination}"
+            )
+
+        else:
+
+            st.success(
+                "Both locations found successfully!"
+            )
+
+            # --------------------------------------------------
+            # ROUTE CALCULATION
+            # --------------------------------------------------
+
+            with st.spinner(
+                "Calculating route..."
+            ):
+
+                try:
+
+                    route = get_route(
+                        origin,
+                        destination_data,
+                    )
+
+                except requests.RequestException:
+
+                    st.error(
+                        "Unable to contact the routing "
+                        "service. Please try again later."
+                    )
+
+                    route = None
+
+            # --------------------------------------------------
+            # ROUTE VALIDATION
+            # --------------------------------------------------
+
+            if route is None:
+
+                st.error(
+                    "Unable to calculate a route "
+                    "between these locations."
                 )
 
             else:
 
-                if origin is None:
-                    st.error(
-                        f"Could not find: {current_location}"
+                st.success(
+                    "Route calculated successfully!"
+                )
+
+                # --------------------------------------------------
+                # ROUTE ROAD NAMES
+                # --------------------------------------------------
+
+                road_names = get_route_road_names(
+                    route["steps"]
+                )
+
+                # --------------------------------------------------
+                # ROUTE METRICS
+                # --------------------------------------------------
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+
+                    st.metric(
+                        "🛣️ Distance",
+                        f"{route['distance_km']:.1f} km",
                     )
 
-                elif destination_data is None:
-                    st.error(
-                        f"Could not find: {destination}"
+                with col2:
+
+                    st.metric(
+                        "⏱️ Estimated Time",
+                        f"{route['duration_minutes']:.0f} min",
                     )
+
+                # --------------------------------------------------
+                # ROUTE ROADS
+                # --------------------------------------------------
+
+                st.subheader(
+                    "🛣️ Route Roads"
+                )
+
+                if road_names:
+
+                    for road in road_names:
+
+                        st.write(
+                            f"• {road}"
+                        )
 
                 else:
 
-                    st.success("Both locations found successfully!")
-                                        with st.spinner("Calculating route..."):
+                    st.info(
+                        "No named roads were found "
+                        "for this route."
+                    )
 
-                        try:
-                            route = get_route(
-                                origin,
-                                destination_data,
-                            )
+                # --------------------------------------------------
+                # ROUTE MAP
+                # --------------------------------------------------
 
-                        except requests.RequestException:
-                            st.error(
-                                "Unable to contact the routing service. "
-                                "Please try again later."
-                            )
-                            route = None
-
-                    if route is None:
-                        st.error(
-                            "Unable to calculate a route "
-                            "between these locations."
-                        )
-
-                    else:
-                        st.success("Route calculated successfully!")
-                        road_names = get_route_road_names(
-                            route["steps"]
-                        )
-
-                                            st.subheader("⚠️ Route Alerts")
-
-                        with st.spinner(
-                            "Searching for recent incidents "
-                            "on your route..."
-                        ):
-
-                            try:
-
-                                raw_incidents = search_route_incidents(
-                                    road_names
-                                )
-
-                               route_incidents = analyze_route_incidents(
-    raw_incidents,
-    road_names,
-    route["geometry"],
-)
-                            except requests.RequestException:
-
-                                st.warning(
-                                    "Unable to search for route incidents "
-                                    "at this time."
-                                )
-
-                                route_incidents = []
-
-                        if route_incidents:
-
-    st.warning(
-        f"{len(route_incidents)} "
-        f"potential route incident(s) found."
-    )
-
-    for incident in route_incidents:
-
-        with st.expander(
-            f"🚨 {incident['type']} — "
-            f"{incident['road']}"
-        ):
-
-            st.write(
-                f"**Incident:** "
-                f"{incident['title']}"
-            )
-
-            st.write(
-                f"**Freshness:** "
-                f"{incident['freshness']}"
-            )
-
-           if incident.get("route_distance_km") is not None:
-    st.write(
-        f"**Distance from route:** "
-        f"{incident['route_distance_km']:.1f} km"
-    )
-
-            st.write(
-                f"**Source:** "
-                f"{incident['source']}"
-            )
-
-            if incident["url"]:
-                st.write(
-                    f"[Read source]({incident['url']})"
+                st.subheader(
+                    "🗺️ Route Map"
                 )
 
-else:
+                display_route_map(
+                    origin,
+                    destination_data,
+                    route,
+                )
 
-    st.success(
-        "✅ No relevant recent route incidents "
-        "were found."
-    )
+                # --------------------------------------------------
+                # ROUTE ALERTS
+                # --------------------------------------------------
 
-                            for incident in route_incidents:
+                st.subheader(
+                    "⚠️ Route Alerts"
+                )
 
-                                st.markdown(
-                                    f"### 🚨 {incident['type']}"
-                                )
+                with st.spinner(
+                    "Searching for recent incidents "
+                    "on your route..."
+                ):
 
-                                st.write(
-                                    f"**Road:** "
-                                    f"{incident['road']}"
-                                )
+                    try:
 
-                                st.write(
-                                    f"**Incident:** "
-                                    f"{incident['title']}"
-                                )
-
-                                st.write(
-                                    f"**Freshness:** "
-                                    f"{incident['freshness']}"
-                                )
-
-                                st.write(
-                                    f"**Confidence:** "
-                                    f"{incident['confidence']}"
-                                )
-
-                                st.write(
-                                    f"**Source:** "
-                                    f"{incident['source']}"
-                                )
-
-                                if incident["url"]:
-
-                                    st.write(
-                                        f"[Read source]({incident['url']})"
-                                    )
-
-                                st.divider()
-
-                        else:
-
-                            st.success(
-                                "No relevant recent route incidents "
-                                "were found."
-                            )    
-
-                       col1, col2 = st.columns(2)
-
-                       with col1:
-                         st.metric(
-                           "🛣️ Distance",
-                           f"{route['distance_km']:.1f} km",
-                         )
-
-                       with col2:
-                         st.metric(
-                          "⏱️ Estimated Time",
-                          f"{route['duration_minutes']:.0f} min",
-                         )
-                            st.subheader("🛣️ Route Roads")
-
-                        if road_names:
-
-                            for road in road_names:
-                                st.write(f"• {road}")
-
-                        else:
-                            st.info(
-                                "No named roads were found "
-                                "for this route."
+                        raw_incidents = (
+                            search_route_incidents(
+                                road_names
                             )
-                        st.subheader("🗺️ Route Map")
+                        )
 
-                        display_route_map(
-                            origin,
-                            destination_data,
+                        route_incidents = (
+                            analyze_route_incidents(
+                                raw_incidents,
+                                road_names,
+                                route["geometry"],
+                            )
+                        )
+
+                    except requests.RequestException:
+
+                        st.warning(
+                            "Unable to search for route "
+                            "incidents at this time."
+                        )
+
+                        route_incidents = []
+
+                # --------------------------------------------------
+                # DISPLAY ROUTE ALERTS
+                # --------------------------------------------------
+
+                if route_incidents:
+
+                    st.warning(
+                        f"{len(route_incidents)} "
+                        f"potential route incident(s) found."
+                    )
+
+                    for incident in route_incidents:
+
+                        with st.expander(
+                            f"🚨 {incident['type']} — "
+                            f"{incident['road']}"
+                        ):
+
+                            st.write(
+                                f"**Incident:** "
+                                f"{incident['title']}"
+                            )
+
+                            st.write(
+                                f"**Freshness:** "
+                                f"{incident['freshness']}"
+                            )
+
+                            st.write(
+                                f"**Confidence:** "
+                                f"{incident['confidence']}"
+                            )
+
+                            # Show geographic distance
+                            # when available
+                            if (
+                                incident.get(
+                                    "route_distance_km"
+                                )
+                                is not None
+                            ):
+
+                                st.write(
+                                    f"**Distance from route:** "
+                                    f"{incident['route_distance_km']:.1f} km"
+                                )
+
+                            st.write(
+                                f"**Source:** "
+                                f"{incident['source']}"
+                            )
+
+                            if incident["url"]:
+
+                                st.write(
+                                    f"[Read source]"
+                                    f"({incident['url']})"
+                                )
+
+                else:
+
+                    st.success(
+                        "✅ No relevant recent route "
+                        "incidents were found."
+                    )
+
+                # --------------------------------------------------
+                # WEATHER
+                # --------------------------------------------------
+
+                st.subheader(
+                    "🌤️ Current Weather at Starting Location"
+                )
+
+                with st.spinner(
+                    "Getting current weather..."
+                ):
+
+                    try:
+
+                        weather = get_weather(
+                            origin["latitude"],
+                            origin["longitude"],
+                        )
+
+                    except requests.RequestException:
+
+                        st.warning(
+                            "Unable to retrieve "
+                            "current weather."
+                        )
+
+                        weather = None
+
+                if weather:
+
+                    col1, col2, col3, col4 = (
+                        st.columns(4)
+                    )
+
+                    with col1:
+
+                        st.metric(
+                            "Temperature",
+                            f"{weather['temperature']} °C",
+                        )
+
+                    with col2:
+
+                        st.metric(
+                            "Humidity",
+                            f"{weather['humidity']} %",
+                        )
+
+                    with col3:
+
+                        st.metric(
+                            "Condition",
+                            weather["description"],
+                        )
+
+                    with col4:
+
+                        st.metric(
+                            "Wind Speed",
+                            f"{weather['wind_speed']} km/h",
+                        )
+
+                # --------------------------------------------------
+                # TRAVEL BRIEF
+                # --------------------------------------------------
+
+                st.subheader(
+                    "📋 Travel Brief"
+                )
+
+                with st.container(
+                    border=True
+                ):
+
+                    travel_brief = (
+                        generate_travel_brief(
                             route,
+                            weather,
+                            route_incidents,
                         )
-                        st.subheader("🌤️ Current Weather at Starting Location")
+                    )
 
-                        with st.spinner("Getting current weather..."):
+                    for item in travel_brief:
 
-                            try:
-                                weather = get_weather(
-                                    origin["latitude"],
-                                    origin["longitude"],
-                                )
-
-                            except requests.RequestException:
-                                st.warning(
-                                    "Unable to retrieve current weather."
-                                )
-                                weather = None
-
-                        if weather:
-
-                            col1, col2, col3, col4 = st.columns(4)
-
-                            with col1:
-                                st.metric(
-                                    "Temperature",
-                                    f"{weather['temperature']} °C",
-                                )
-
-                            with col2:
-                                st.metric(
-                                    "Humidity",
-                                    f"{weather['humidity']} %",
-                                )
-
-                            with col3:
-                                st.metric(
-                                    "Condition",
-                                    weather["description"],
-                                )
-
-                            with col4:
-                                st.metric(
-                                    "Wind Speed",
-                                    f"{weather['wind_speed']} km/h",
-                                )   
-
-                    st.subheader("📋 Travel Brief")
-
-with st.container(border=True):
-
-    travel_brief = generate_travel_brief(
-        route,
-        weather,
-        route_incidents,
-    )
-
-    for item in travel_brief:
-        st.write(item)
-
-st.caption(
-    "⚠️ RouteGuard alerts are based on available public "
-    "information and may not represent real-time road "
-    "conditions. Always follow official traffic "
-    "instructions and road signs."
-)
-       
-                    st.subheader("📍 Current Location")
-
-                    st.write(origin["display_name"])
-
-                    col1, col2 = st.columns(2)
-
-                    with col1:
-                        st.metric(
-                            "Latitude",
-                            f"{origin['latitude']:.6f}",
+                        st.write(
+                            item
                         )
 
-                    with col2:
-                        st.metric(
-                            "Longitude",
-                            f"{origin['longitude']:.6f}",
-                        )
+                st.caption(
+                    "⚠️ RouteGuard alerts are based on "
+                    "available public information and "
+                    "may not represent real-time road "
+                    "conditions. Always follow official "
+                    "traffic instructions and road signs."
+                )
 
-                    st.subheader("🏁 Destination")
+                # --------------------------------------------------
+                # CURRENT LOCATION DETAILS
+                # --------------------------------------------------
 
-                    st.write(destination_data["display_name"])
+                st.subheader(
+                    "📍 Current Location"
+                )
 
-                    col1, col2 = st.columns(2)
+                st.write(
+                    origin["display_name"]
+                )
 
-                    with col1:
-                        st.metric(
-                            "Latitude",
-                            f"{destination_data['latitude']:.6f}",
-                        )
+                col1, col2 = st.columns(2)
 
-                    with col2:
-                        st.metric(
-                            "Longitude",
-                            f"{destination_data['longitude']:.6f}",
-                        )
+                with col1:
+
+                    st.metric(
+                        "Latitude",
+                        f"{origin['latitude']:.6f}",
+                    )
+
+                with col2:
+
+                    st.metric(
+                        "Longitude",
+                        f"{origin['longitude']:.6f}",
+                    )
+
+                # --------------------------------------------------
+                # DESTINATION DETAILS
+                # --------------------------------------------------
+
+                st.subheader(
+                    "🏁 Destination"
+                )
+
+                st.write(
+                    destination_data["display_name"]
+                )
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+
+                    st.metric(
+                        "Latitude",
+                        f"{destination_data['latitude']:.6f}",
+                    )
+
+                with col2:
+
+                    st.metric(
+                        "Longitude",
+                        f"{destination_data['longitude']:.6f}",
+                    )
