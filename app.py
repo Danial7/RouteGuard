@@ -163,11 +163,11 @@ destination_data = geocode_location(destination)
                                     road_names
                                 )
 
-                                route_incidents = analyze_route_incidents(
-                                    raw_incidents,
-                                    road_names,
-                                )
-
+                               route_incidents = analyze_route_incidents(
+    raw_incidents,
+    road_names,
+    route["geometry"],
+)
                             except requests.RequestException:
 
                                 st.warning(
@@ -201,10 +201,11 @@ destination_data = geocode_location(destination)
                 f"{incident['freshness']}"
             )
 
-            st.write(
-                f"**Confidence:** "
-                f"{incident['confidence']}"
-            )
+           if incident.get("route_distance_km") is not None:
+    st.write(
+        f"**Distance from route:** "
+        f"{incident['route_distance_km']:.1f} km"
+    )
 
             st.write(
                 f"**Source:** "
