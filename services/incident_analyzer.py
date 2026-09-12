@@ -1,6 +1,12 @@
 import re
 
 from utils.distance import distance_to_route_km
+from datetime import datetime, timezone
+
+
+# --------------------------------------------------
+# ROAD NAME NORMALIZATION
+# --------------------------------------------------
 
 def normalize_road_name(road_name):
     """
@@ -35,7 +41,12 @@ def normalize_road_name(road_name):
 
     return road_name
 
-    ROAD_ALIASES = {
+
+# --------------------------------------------------
+# ROAD ALIASES
+# --------------------------------------------------
+
+ROAD_ALIASES = {
     "shahrah e faisal": [
         "shahrah faisal",
         "shara e faisal",
@@ -53,6 +64,10 @@ def normalize_road_name(road_name):
     ],
 }
 
+
+# --------------------------------------------------
+# ROAD MATCHING
+# --------------------------------------------------
 
 def roads_match(
     incident_road,
@@ -74,12 +89,15 @@ def roads_match(
     if not incident or not route:
         return False
 
+    # Exact normalized match
     if incident == route:
         return True
 
+    # Partial match
     if incident in route or route in incident:
         return True
 
+    # Alias matching
     for main_road, aliases in ROAD_ALIASES.items():
 
         route_group = [
@@ -99,6 +117,11 @@ def roads_match(
             return True
 
     return False
+
+
+# --------------------------------------------------
+# INCIDENT KEYWORDS
+# --------------------------------------------------
 
 INCIDENT_KEYWORDS = {
     "ACCIDENT": [
@@ -156,10 +179,18 @@ INCIDENT_KEYWORDS = {
 }
 
 
+# --------------------------------------------------
+# INCIDENT CLASSIFICATION
+# --------------------------------------------------
+
 def classify_incident(title):
     """
-    Classify an incident based on keywords in its title.
+    Classify an incident based on keywords
+    in its title.
     """
+
+    if not title:
+        return None
 
     text = title.lower()
 
@@ -172,8 +203,10 @@ def classify_incident(title):
 
     return None
 
-    from datetime import datetime, timezone
 
+# --------------------------------------------------
+# INCIDENT FRESHNESS
+# --------------------------------------------------
 
 def calculate_freshness(published_time):
     """
@@ -184,15 +217,21 @@ def calculate_freshness(published_time):
         return "UNKNOWN"
 
     try:
+
         published = datetime.strptime(
             published_time,
             "%Y%m%dT%H%M%SZ",
-        ).replace(tzinfo=timezone.utc)
+        ).replace(
+            tzinfo=timezone.utc
+        )
 
     except ValueError:
+
         return "UNKNOWN"
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(
+        timezone.utc
+    )
 
     age_hours = (
         now - published
@@ -204,17 +243,34 @@ def calculate_freshness(published_time):
     if age_hours <= 24:
         return "RECENT"
 
-    def analyze_incident(incident):
+    if age_hours <= 72:
+        return "OLDER"
+
+    return "STALE"
+
+
+# --------------------------------------------------
+# ANALYZE SINGLE INCIDENT
+# --------------------------------------------------
+
+def analyze_incident(incident):
     """
-    Classify and assess the freshness of an incident.
+    Classify and assess the freshness
+    of an incident.
     """
 
     incident_type = classify_incident(
-        incident["title"]
+        incident.get(
+            "title",
+            "",
+        )
     )
 
     freshness = calculate_freshness(
-        incident["published"]
+        incident.get(
+            "published",
+            "",
+        )
     )
 
     if incident_type is None:
@@ -222,21 +278,31 @@ def calculate_freshness(published_time):
 
     analyzed_incident = incident.copy()
 
-    analyzed_incident["type"] = incident_type
-    analyzed_incident["freshness"] = freshness
+    analyzed_incident["type"] = (
+        incident_type
+    )
+
+    analyzed_incident["freshness"] = (
+        freshness
+    )
 
     return analyzed_incident
 
-    if age_hours <= 72:
-        return "OLDER"
 
-    return "STALE"
+# --------------------------------------------------
+# ROUTE RELEVANCE SCORE
+# --------------------------------------------------
 
-   def calculate_route_relevance(
+def calculate_route_relevance(
     incident,
     road_names,
     route_geometry=None,
 ):
+    """
+    Calculate how relevant an incident is
+    to the selected route.
+    """
+
     score = 0
 
     incident_road = incident.get(
@@ -249,17 +315,24 @@ def calculate_freshness(published_time):
         for road in road_names
     ]
 
-    # Road-name matching
+    # --------------------------------------------------
+    # ROAD-NAME MATCHING
+    # --------------------------------------------------
+
     for route_road in route_roads:
 
         if roads_match(
             incident_road,
             route_road,
         ):
+
             score += 30
             break
 
-    # Geographic distance
+    # --------------------------------------------------
+    # GEOGRAPHIC DISTANCE
+    # --------------------------------------------------
+
     if (
         route_geometry
         and incident.get("latitude") is not None
@@ -272,44 +345,89 @@ def calculate_freshness(published_time):
             route_geometry,
         )
 
-        incident["route_distance_km"] = distance
+        incident["route_distance_km"] = (
+            distance
+        )
 
         if distance <= 1:
+
             score += 30
 
         elif distance <= 3:
+
             score += 20
 
         elif distance <= 5:
+
             score += 10
 
-    # Freshness
+    # --------------------------------------------------
+    # FRESHNESS
+    # --------------------------------------------------
+
     freshness = incident.get(
         "freshness"
     )
 
     if freshness == "VERY_RECENT":
+
         score += 25
 
     elif freshness == "RECENT":
+
         score += 20
 
     elif freshness == "OLDER":
+
         score += 10
 
-    # Recognized incident
+    # --------------------------------------------------
+    # RECOGNIZED INCIDENT
+    # --------------------------------------------------
+
     if incident.get("type"):
+
         score += 10
 
     return score
-    
-   def analyze_route_incidents(
+
+
+# --------------------------------------------------
+# CONFIDENCE LEVEL
+# --------------------------------------------------
+
+def get_confidence_level(score):
+    """
+    Convert relevance score into a confidence level.
+    """
+
+    if score >= 60:
+
+        return "HIGH"
+
+    if score >= 40:
+
+        return "MEDIUM"
+
+    if score >= 20:
+
+        return "LOW"
+
+    return "IGNORE"
+
+
+# --------------------------------------------------
+# ANALYZE ALL ROUTE INCIDENTS
+# --------------------------------------------------
+
+def analyze_route_incidents(
     incidents,
     road_names,
     route_geometry=None,
 ):
     """
-    Analyze incidents and keep those relevant to the route.
+    Analyze incidents and keep those relevant
+    to the route.
     """
 
     analyzed_incidents = []
@@ -321,41 +439,33 @@ def calculate_freshness(published_time):
         )
 
         if analyzed is None:
+
             continue
 
-       score = calculate_route_relevance(
-    analyzed,
-    road_names,
-    route_geometry,
-)
+        score = calculate_route_relevance(
+            analyzed,
+            road_names,
+            route_geometry,
+        )
 
         confidence = get_confidence_level(
             score
         )
 
         if confidence == "IGNORE":
+
             continue
 
-        analyzed["relevance_score"] = score
-        analyzed["confidence"] = confidence
+        analyzed["relevance_score"] = (
+            score
+        )
+
+        analyzed["confidence"] = (
+            confidence
+        )
 
         analyzed_incidents.append(
             analyzed
         )
 
     return analyzed_incidents
-    def get_confidence_level(score):
-    """
-    Convert relevance score into a confidence level.
-    """
-
-    if score >= 60:
-        return "HIGH"
-
-    if score >= 40:
-        return "MEDIUM"
-
-    if score >= 20:
-        return "LOW"
-
-    return "IGNORE"
